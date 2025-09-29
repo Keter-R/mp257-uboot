@@ -1,0 +1,222 @@
+#!/bin/bash -
+function bbfatal() { echo "$*" ; exit 1 ; }
+
+# Set default TF-A FIP config
+FIP_CONFIG="${FIP_CONFIG:-optee-emmc optee-sdcard optee-programmer-usb}"
+
+FIP_BL31_ENABLE="${FIP_BL31_ENABLE:-1}"
+FIP_BL32_CONF=""
+FIP_DEVICETREE="${FIP_DEVICETREE:-}"
+FIP_SEARCH_CONF=""
+FIP_DEVICE_CONF=""
+# Set default supported configuration for devicetree and bl32 configuration
+declare -A FIP_BL32_CONF_ARRAY
+declare -A FIP_DEVICETREE_ARRAY
+declare -A FIP_SEARCH_CONF_ARRAY
+declare -A FIP_DEVICE_CONF_ARRAY
+FIP_BL32_CONF_ARRAY[optee-emmc]="optee"
+FIP_DEVICETREE_ARRAY[optee-emmc]="stm32mp257d-atk-ddr-1GB stm32mp257d-atk-ddr-2GB"
+FIP_SEARCH_CONF_ARRAY[optee-emmc]="default:optee"
+FIP_DEVICE_CONF_ARRAY[optee-emmc]=""
+FIP_BL32_CONF_ARRAY[optee-nor]="optee"
+FIP_DEVICETREE_ARRAY[optee-nor]=" stm32mp257f-ev1 "
+FIP_SEARCH_CONF_ARRAY[optee-nor]="default:optee"
+FIP_DEVICE_CONF_ARRAY[optee-nor]=""
+FIP_BL32_CONF_ARRAY[optee-sdcard]="optee"
+FIP_DEVICETREE_ARRAY[optee-sdcard]="stm32mp257d-atk-ddr-1GB stm32mp257d-atk-ddr-2GB"
+FIP_SEARCH_CONF_ARRAY[optee-sdcard]="default:optee"
+FIP_DEVICE_CONF_ARRAY[optee-sdcard]=""
+FIP_BL32_CONF_ARRAY[optee-programmer-usb]="optee"
+FIP_DEVICETREE_ARRAY[optee-programmer-usb]="stm32mp257d-atk-ddr-1GB stm32mp257d-atk-ddr-2GB"
+FIP_SEARCH_CONF_ARRAY[optee-programmer-usb]="programmer:optee-programmer-usb:optee"
+FIP_DEVICE_CONF_ARRAY[optee-programmer-usb]="usb"
+FIP_BL32_CONF_ARRAY[fastboot-emmc]="optee"
+FIP_DEVICETREE_ARRAY[fastboot-emmc]=" stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl "
+FIP_SEARCH_CONF_ARRAY[fastboot-emmc]="fastboot-emmc:optee"
+FIP_DEVICE_CONF_ARRAY[fastboot-emmc]="optee-programmer-usb"
+FIP_BL32_CONF_ARRAY[fastboot-sdcard]="optee"
+FIP_DEVICETREE_ARRAY[fastboot-sdcard]=" stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 stm32mp257f-ev1-ca35tdcid-ostl-m33-examples-sram stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl "
+FIP_SEARCH_CONF_ARRAY[fastboot-sdcard]="fastboot-sdcard:optee"
+FIP_DEVICE_CONF_ARRAY[fastboot-sdcard]="optee-programmer-usb"
+FIP_BL32_CONF_ARRAY[opteemin-emmc]="optee"
+FIP_DEVICETREE_ARRAY[opteemin-emmc]=" stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl "
+FIP_SEARCH_CONF_ARRAY[opteemin-emmc]="default:opteemin"
+FIP_DEVICE_CONF_ARRAY[opteemin-emmc]=""
+FIP_BL32_CONF_ARRAY[opteemin-nor]="optee"
+FIP_DEVICETREE_ARRAY[opteemin-nor]=" stm32mp257f-ev1 "
+FIP_SEARCH_CONF_ARRAY[opteemin-nor]="default:opteemin"
+FIP_DEVICE_CONF_ARRAY[opteemin-nor]=""
+FIP_BL32_CONF_ARRAY[opteemin-sdcard]="optee"
+FIP_DEVICETREE_ARRAY[opteemin-sdcard]=" stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 stm32mp257f-ev1-ca35tdcid-ostl-m33-examples-sram stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl "
+FIP_SEARCH_CONF_ARRAY[opteemin-sdcard]="default:opteemin"
+FIP_DEVICE_CONF_ARRAY[opteemin-sdcard]=""
+FIP_BL32_CONF_ARRAY[opteemin-programmer-usb]="optee"
+FIP_DEVICETREE_ARRAY[opteemin-programmer-usb]=" stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl stm32mp257f-ev1-ca35tdcid-ostl-m33-examples-sram "
+FIP_SEARCH_CONF_ARRAY[opteemin-programmer-usb]="programmer:opteemin-programmer-usb:opteemin"
+FIP_DEVICE_CONF_ARRAY[opteemin-programmer-usb]="usb"
+FIP_BL32_CONF_ARRAY[fastboot-opteemin-emmc]="optee"
+FIP_DEVICETREE_ARRAY[fastboot-opteemin-emmc]=" stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl "
+FIP_SEARCH_CONF_ARRAY[fastboot-opteemin-emmc]="fastboot-emmc:opteemin"
+FIP_DEVICE_CONF_ARRAY[fastboot-opteemin-emmc]="opteemin-emmc"
+FIP_BL32_CONF_ARRAY[fastboot-opteemin-sdcard]="optee"
+FIP_DEVICETREE_ARRAY[fastboot-opteemin-sdcard]=" stm32mp235f-dk stm32mp257f-dk stm32mp257f-ev1 stm32mp257f-ev1-ca35tdcid-ostl-m33-examples-sram stm32mp257f-ev1-ca35tdcid-ostl-m33-examples stm32mp257f-ev1-ca35tdcid-ostl stm32mp257f-dk-ca35tdcid-ostl-m33-examples stm32mp257f-dk-ca35tdcid-ostl "
+FIP_SEARCH_CONF_ARRAY[fastboot-opteemin-sdcard]="fastboot-sdcard:opteemin"
+FIP_DEVICE_CONF_ARRAY[fastboot-opteemin-sdcard]="opteemin-sdcard"
+
+# Make sure about FIP_CONFIG value
+if [ -z "$FIP_CONFIG" ]; then
+    bbfatal "Wrong configuration 'FIP_CONFIG' is empty."
+else
+    # Check that configuration match any of the supported ones
+    for config in $FIP_CONFIG; do
+        CONFIG_FOUND=NO
+        for fip_config in    optee-emmc   optee-nor optee-sdcard optee-programmer-usb fastboot-emmc fastboot-sdcard opteemin-emmc   opteemin-nor opteemin-sdcard opteemin-programmer-usb fastboot-opteemin-emmc fastboot-opteemin-sdcard; do
+            [ "${config}" = "${fip_config}" ] && { CONFIG_FOUND="YES" ; break; }
+        done
+        [ "${CONFIG_FOUND}" = "NO" ] && bbfatal "Wrong 'FIP_CONFIG' configuration : ${config} is not one of the supported one (   optee-emmc   optee-nor optee-sdcard optee-programmer-usb fastboot-emmc fastboot-sdcard opteemin-emmc   opteemin-nor opteemin-sdcard opteemin-programmer-usb fastboot-opteemin-emmc fastboot-opteemin-sdcard)"
+    done
+fi
+# Manage FIP_BL32_CONF default init
+if [ -z "$FIP_BL32_CONF" ]; then
+    # Assigned default supported value
+    for config in $FIP_CONFIG; do
+        FIP_BL32_CONF+="${FIP_BL32_CONF_ARRAY[${config}]},"
+    done
+fi
+# Manage FIP_DEVICETREE default init
+if [ -z "$FIP_DEVICETREE" ]; then
+    # Assigned default supported value
+    for config in $FIP_CONFIG; do
+        FIP_DEVICETREE+="${FIP_DEVICETREE_ARRAY[${config}]},"
+    done
+fi
+# Manage FIP_SEARCH_CONF default init
+if [ -z "$FIP_SEARCH_CONF" ]; then
+    # Assigned default supported value
+    for config in $FIP_CONFIG; do
+        FIP_SEARCH_CONF+="${FIP_SEARCH_CONF_ARRAY[${config}]},"
+    done
+fi
+# Manage FIP_DEVICE_CONF default init
+if [ -z "$FIP_DEVICE_CONF" ]; then
+    # Assigned default supported value
+    for config in $FIP_CONFIG; do
+        FIP_DEVICE_CONF+="${FIP_DEVICE_CONF_ARRAY[${config}]},"
+    done
+fi
+
+# Configure default folder path for binaries to package
+FIP_DEPLOYDIR_ROOT="${FIP_DEPLOYDIR_ROOT:-}"
+if [ -z "${FIP_DEPLOYDIR_ROOT}" ] ; then
+    echo "--------------------------------------------------------"
+    echo "FIP: STOP generation of fip"
+    echo "because all binaries mandatory to generate FIP are present and must be provided."
+    echo "Please verify that FIP_DEPLOYDIR_ROOT variable is correctly populated and contains the binaries requested by fip generation."
+    echo "--------------------------------------------------------"
+    exit 1
+fi
+
+FIP_DEPLOYDIR_FIP="${FIP_DEPLOYDIR_FIP:-$FIP_DEPLOYDIR_ROOT/fip}"
+FIP_DEPLOYDIR_TFA="${FIP_DEPLOYDIR_TFA:-$FIP_DEPLOYDIR_ROOT/arm-trusted-firmware/bl32}"
+FIP_DEPLOYDIR_BL31="${FIP_DEPLOYDIR_BL31:-$FIP_DEPLOYDIR_ROOT/arm-trusted-firmware/bl31}"
+FIP_DEPLOYDIR_FWDDR="${FIP_DEPLOYDIR_FWDDR:-$FIP_DEPLOYDIR_ROOT/arm-trusted-firmware/ddr}"
+FIP_DEPLOYDIR_FWCONF="${FIP_DEPLOYDIR_FWCONF:-$FIP_DEPLOYDIR_ROOT/arm-trusted-firmware/fwconfig}"
+FIP_DEPLOYDIR_OPTEE="${FIP_DEPLOYDIR_OPTEE:-$FIP_DEPLOYDIR_ROOT/optee}"
+FIP_DEPLOYDIR_UBOOT="${FIP_DEPLOYDIR_UBOOT:-$FIP_DEPLOYDIR_ROOT/u-boot}"
+FIP_WRAPPER="create_st_fip_binary.sh"
+
+echo ""
+echo "fiptool-stm32mp config:"
+for config in $FIP_CONFIG; do
+    i=$(expr $i + 1)
+    bl32_conf=$(echo $FIP_BL32_CONF | cut -d',' -f$i)
+    dt_config=$(echo $FIP_DEVICETREE | cut -d',' -f$i)
+    search_conf=$(echo $FIP_SEARCH_CONF | cut -d',' -f$i)
+    device_conf=$(echo $FIP_DEVICE_CONF | cut -d',' -f$i)
+    echo "  ${config}:" ; \
+    echo "    bl32 config value: ${bl32_conf}"
+    echo "    devicetree config: ${dt_config}"
+    echo "    search config    : ${search_conf}"
+    echo "    device config    : ${device_conf}"
+done
+echo ""
+echo "Switch configuration:"
+echo "  FIP_BL31_ENABLE : $FIP_BL31_ENABLE"
+echo ""
+echo "Output folders:"
+echo "  FIP_DEPLOYDIR_ROOT  : $FIP_DEPLOYDIR_ROOT"
+echo "  FIP_DEPLOYDIR_FIP   : $FIP_DEPLOYDIR_FIP"
+echo "  FIP_DEPLOYDIR_TFA   : $FIP_DEPLOYDIR_TFA"
+echo "  FIP_DEPLOYDIR_BL31  : $FIP_DEPLOYDIR_BL31"
+echo "  FIP_DEPLOYDIR_FWCONF: $FIP_DEPLOYDIR_FWCONF"
+echo "  FIP_DEPLOYDIR_FWDDR : $FIP_DEPLOYDIR_FWDDR"
+echo "  FIP_DEPLOYDIR_OPTEE : $FIP_DEPLOYDIR_OPTEE"
+echo "  FIP_DEPLOYDIR_UBOOT : $FIP_DEPLOYDIR_UBOOT"
+echo ""
+unset i
+for config in $FIP_CONFIG; do
+    i=$(expr $i + 1)
+    bl32_conf=$(echo $FIP_BL32_CONF | cut -d',' -f$i)
+    dt_config=$(echo $FIP_DEVICETREE | cut -d',' -f$i)
+    search_conf=$(echo $FIP_SEARCH_CONF | cut -d',' -f$i)
+    device_conf=$(echo $FIP_DEVICE_CONF | cut -d',' -f$i)
+    for dt in ${dt_config}; do
+        # Init soc suffix
+        soc_suffix=""
+        if [ -n " stm32mp21  stm32mp23  stm32mp25 " ]; then
+            for soc in  stm32mp21  stm32mp23  stm32mp25 ; do
+                [ "$(echo ${dt} | grep -c ${soc})" -eq 1 ] && soc_suffix="${soc}"
+            done
+        fi
+        # Init FIP bl31 settings
+        FIP_PARAM_BLxx=""
+        if [ "$FIP_BL31_ENABLE" = "1" ]; then
+            FIP_PARAM_BLxx="--use-bl31"
+        fi
+        # Init FIP bl32 settings
+        if [ "${bl32_conf}" = "tfa" ]; then
+            FIP_PARAM_BLxx="--use-bl32"
+        elif [ -n "${bl32_conf}" ] && [ "${bl32_conf}" != "optee" ]; then
+            bbfatal "Wrong configuration '${bl32_conf}' found in FIP_CONFIG for ${config} config."
+        fi
+
+        # Configure storage search
+        STORAGE_SEARCH=""
+        [ -z "${device_conf}" ] || STORAGE_SEARCH="--search-storage ${device_conf}"
+
+        FIP_PARAM_ddr=""
+        if [ -d "$FIP_DEPLOYDIR_FWDDR" ]; then
+            FIP_PARAM_ddr="--use-ddr"
+            $FIP_WRAPPER \
+                $FIP_PARAM_BLxx \
+                $STORAGE_SEARCH \
+                --use-ddr --generate-only-ddr \
+                --search-configuration ${config} \
+                --search-devicetree ${dt} \
+                --search-soc-name ${soc_suffix} \
+                --output $FIP_DEPLOYDIR_FIP
+        fi
+
+        SECOND_CONFSEARCH=""
+        [ -z "${search_conf}" ] || SECOND_CONFSEARCH="--search-secondary-config ${search_conf}"
+
+        echo "$FIP_WRAPPER \
+                $FIP_PARAM_BLxx \
+                $FIP_PARAM_ddr \
+                $STORAGE_SEARCH \
+                $SECOND_CONFSEARCH \
+                --search-configuration ${config} \
+                --search-devicetree ${dt} \
+                --search-soc-name ${soc_suffix} \
+                --output $FIP_DEPLOYDIR_FIP"
+        $FIP_WRAPPER \
+                $FIP_PARAM_BLxx \
+                $FIP_PARAM_ddr \
+                $STORAGE_SEARCH \
+                $SECOND_CONFSEARCH \
+                --search-configuration ${config} \
+                --search-devicetree ${dt} \
+                --search-soc-name ${soc_suffix} \
+                --output $FIP_DEPLOYDIR_FIP
+    done
+done
