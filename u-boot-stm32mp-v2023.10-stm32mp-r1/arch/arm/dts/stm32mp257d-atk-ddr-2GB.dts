@@ -89,7 +89,7 @@
 	pinctrl-0 = <&adc3_in2_pins_a>;
 	vdda-supply = <&vdda_1v8>;
 	vref-supply = <&vddref_1v8>;
-	status = "okay";
+	status = "disabled";
 
 	adc3: adc@0 {
 		#address-cells = <1>;
