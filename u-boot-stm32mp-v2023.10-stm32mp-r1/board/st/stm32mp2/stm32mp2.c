@@ -947,6 +947,11 @@ int alientek_set_mipi_lcd(void)
 
 	ts_valid = detect_alientek_mipi_lcd_touchscreen();
 	if(!ts_valid) {
+		//------------------
+		dsi_lcd_id = 2;
+		env_set("dsi_lcd_id", "2");
+		break;
+		//------------------
 		ret = adc_mipi_dsi_lcd_measurement(node, &adc_value);
 		if(ret) {
 			return -1;
