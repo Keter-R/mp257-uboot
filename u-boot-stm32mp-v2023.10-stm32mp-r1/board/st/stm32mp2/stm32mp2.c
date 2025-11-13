@@ -950,7 +950,7 @@ int alientek_set_mipi_lcd(void)
 		//------------------
 		dsi_lcd_id = 2;
 		env_set("dsi_lcd_id", "2");
-		break;
+		continue;
 		//------------------
 		ret = adc_mipi_dsi_lcd_measurement(node, &adc_value);
 		if(ret) {
